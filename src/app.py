@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from gemini import client
+from src.gemini import client
 
 app = FastAPI()
 
