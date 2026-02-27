@@ -5,9 +5,11 @@
 #! /bin/bash
 
 # Step 1: Error handling for any invalid arguments
+sudo apt update
 
 # Step 2: Setup Certbot and nginx to allow HTTPS connections to the server from https://varun.saichaparala.com
 cd ~
+sudo apt install nginx certbot python3-certbot-nginx -y
 sudo certbot --nginx -d varun.saichaparala.com
 
 # Step 3: Setup python and pyenv
