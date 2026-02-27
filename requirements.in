@@ -1,3 +1,5 @@
 fastapi
 uvicorn
 ollama
+load_dotenv
+google-genai
