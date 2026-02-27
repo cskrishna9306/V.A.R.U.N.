@@ -1,0 +1,14 @@
+{
+  "Comment": "Update A record via GCP launch script",
+  "Changes": [
+    {
+      "Action": "UPSERT",
+      "ResourceRecordSet": {
+        "Name": "$ROUTE_53_RECORD_NAME",
+        "Type": "A",
+        "TTL": 300,
+        "ResourceRecords": [{ "Value": "$EXTERNAL_IP" }]
+      }
+    }
+  ]
+}
