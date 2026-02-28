@@ -1,7 +1,12 @@
 from fastapi import FastAPI
+from pydantic import BaseModel
 from src.gemini import client
 
 app = FastAPI()
+
+# 1. Define the schema
+class ChatRequest(BaseModel):
+    query: str
 
 @app.get("/")
 def read_root():
@@ -9,11 +14,11 @@ def read_root():
 
 @app.post("/talk")
 def talk(
-    prompt: str
+    query: ChatRequest
 ):
     response = client.models.generate_content(
         model="models/gemini-3-flash-preview",
-        contents=prompt
+        contents=query.query
     )
     return {"response": response.text}
     

@@ -1,5 +1,6 @@
 fastapi
 uvicorn
 ollama
+pydantic
 load_dotenv
 google-genai
