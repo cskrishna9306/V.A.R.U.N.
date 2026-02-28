@@ -4,6 +4,12 @@
 #
 #    pip-compile requirements.in
 #
+aiohappyeyeballs==2.6.1
+    # via aiohttp
+aiohttp==3.13.3
+    # via discord-py
+aiosignal==1.4.0
+    # via aiohttp
 annotated-doc==0.0.4
     # via fastapi
 annotated-types==0.7.0
@@ -13,6 +19,10 @@ anyio==4.12.1
     #   google-genai
     #   httpx
     #   starlette
+attrs==25.4.0
+    # via aiohttp
+audioop-lts==0.2.2
+    # via discord-py
 certifi==2026.2.25
     # via
     #   httpcore
@@ -26,10 +36,16 @@ click==8.3.1
     # via uvicorn
 cryptography==46.0.5
     # via google-auth
+discord-py==2.7.0
+    # via -r requirements.in
 distro==1.9.0
     # via google-genai
 fastapi==0.133.1
     # via -r requirements.in
+frozenlist==1.8.0
+    # via
+    #   aiohttp
+    #   aiosignal
 google-auth[requests]==2.49.0.dev0
     # via google-genai
 google-genai==1.65.0
@@ -49,10 +65,19 @@ idna==3.11
     #   anyio
     #   httpx
     #   requests
+    #   yarl
 load-dotenv==0.1.0
     # via -r requirements.in
+multidict==6.7.1
+    # via
+    #   aiohttp
+    #   yarl
 ollama==0.6.1
     # via -r requirements.in
+propcache==0.4.1
+    # via
+    #   aiohttp
+    #   yarl
 pyasn1==0.6.2
     # via pyasn1-modules
 pyasn1-modules==0.4.2
@@ -96,3 +121,5 @@ uvicorn==0.41.0
     # via -r requirements.in
 websockets==16.0
     # via google-genai
+yarl==1.22.0
+    # via aiohttp
