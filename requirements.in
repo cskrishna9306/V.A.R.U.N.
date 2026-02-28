@@ -4,3 +4,4 @@ ollama
 pydantic
 load_dotenv
 google-genai
+discord.py
