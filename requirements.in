@@ -1,7 +1,13 @@
+# Python MUST packages
+load_dotenv
+pydantic
+discord.py
+
+# Web server packages
 fastapi
 uvicorn
-ollama
-pydantic
-load_dotenv
+
+# LLM packages
+autogen
+autogen-ext[openai]
 google-genai
-discord.py
