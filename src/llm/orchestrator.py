@@ -32,10 +32,10 @@ async def main():
     """
     
     # Initialize the agent
-    bot = V_A_R_U_N() 
+    agent = V_A_R_U_N() 
 
     # Use the Console helper
-    await Console(bot.run_stream(task="Translate 'I love coding' to emojis."))
+    await Console(agent.run_stream(task="Translate 'I love coding' to emojis."))
     
     return
 
