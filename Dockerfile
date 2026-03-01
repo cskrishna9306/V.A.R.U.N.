@@ -27,4 +27,4 @@ COPY . .
 ENV PYTHONPATH=/app/src
 
 # Command to run your bot in the container
-CMD ["python", "src/main.py"]
+CMD ["python", "-m", "src.main"]
