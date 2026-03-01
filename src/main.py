@@ -1,11 +1,14 @@
+# Import standard packages
 import os
+from dotenv import load_dotenv
 
+# Import Discord packages
 import discord
 from discord.ext import commands
 from discord import app_commands
-from dotenv import load_dotenv
-# from gemini import client
-import ollama
+
+# Import custom packages
+from src.llm.orchestrator import V_A_R_U_N
 
 load_dotenv()
 
@@ -13,8 +16,6 @@ TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 
 intents = discord.Intents.default()
 intents.message_content = True
-# bot = commands.Bot(command_prefix=commands.when_mentioned_or("!"), intents=intents)  # commands.when_mentioned_or("!") is used to make the bot respond to !ping and @bot ping
-
 
 class MyBot(commands.Bot):
     def __init__(self):
@@ -22,6 +23,8 @@ class MyBot(commands.Bot):
         # but Slash commands work via 'Interactions')
         intents = discord.Intents.default()
         super().__init__(command_prefix="!", intents=intents)
+        
+        self.agent = V_A_R_U_N()  # Initialize the V.A.R.U.N. agent
 
     async def setup_hook(self):
         # This copies your commands to your specific server for instant updates
@@ -84,16 +87,9 @@ async def talk(interaction: discord.Interaction, prompt: str):
     await interaction.response.defer()
     
     try:
-        # 2. Call the local Ollama instance
-        # Ensure you have run 'ollama pull gemma3:4b' on your VM first!
-        response = ollama.chat(model='llama3.1:latest', messages=[
-            {
-                'role': 'user',
-                'content': prompt,
-            },
-        ])
+        response = await bot.agent.run(task=prompt)
         
-        response_text = response['message']['content']
+        response_text = response.messages[-1].content
         
     except Exception as e:
         response_text = f"Error contacting local Ollama: {str(e)}"
