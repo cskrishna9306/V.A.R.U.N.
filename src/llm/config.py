@@ -1,6 +1,5 @@
-
 # Defines the LLM to use
-MODEL_ID = "llama3.1:latest"
+MODEL_ID = "qwen2.5:latest"
 
 # Construct the LLM config to pass to the agent
 config_list = [

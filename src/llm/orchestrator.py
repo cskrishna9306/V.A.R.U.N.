@@ -15,13 +15,14 @@ class V_A_R_U_N(AssistantAgent):
     The brain behind the V.A.R.U.N. discord bot.
     """
         
-    def __init__(self):
+    def __init__(self, tools: list | None):
         super().__init__(
             name="V_A_R_U_N",
             system_message=load_system_prompt("V-A-R-U-N.md"),
             model_client=OllamaChatCompletionClient(
                 model=MODEL_ID
-            )
+            ),
+            tools=tools
         )
         
         return
