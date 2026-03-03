@@ -1,7 +1,6 @@
 # Import Discord packages
 import discord
 from discord.ext import commands
-from discord import app_commands
 
 # Import custom packages
 from src.llm.orchestrator import V_A_R_U_N
@@ -10,7 +9,8 @@ from src.discord.config import (
     BOIS_GUILD_ID,
     PUBLIC_TOOLS,
 )
-# from src.discord.cogs.tools import get_weather
+from src.models import YapResponse
+from src.llm.utils import get_gif
 
 class DiscordBot(commands.Bot):
     """
@@ -91,8 +91,25 @@ class DiscordBot(commands.Bot):
                 result = await self.public_agent.run(task=prompt)
                 response = result.messages[-1].content
                 
-                # Send the result to Discord
-                await message.reply(response)
+                try:
+                    # Parse the JSON string into your Pydantic model
+                    data = YapResponse.model_validate_json(response)
+                    
+                    # First, send the text message to Discord
+                    await message.reply(data.text)
+                    
+                    # Call the get_gif tool
+                    gif_url = get_gif(data.gif_search_query)
+                    
+                    # TODO: Maybe move the GIF lottery out of the get_gif routine
+                    # Next, sent the GIF if the routine returned any
+                    if gif_url:
+                        await message.channel.send(gif_url)
+
+                except Exception as e:
+                    # Fallback: if the LLM fails JSON formatting, just send the raw content
+                    print(f"Parsing error: {e}")
+                    await message.reply(response)
         
         else:
             # TODO: Monitor for inappropriate/racist comments
@@ -121,11 +138,29 @@ class DiscordBot(commands.Bot):
         
         # Change state to "typing ..."
         async with channel.typing():
+            
             # Trigger V.A.R.U.N.
             result = await self.public_agent.run(task=f"System: New member {member.name} joined. Greet them with your usual blunt/sarcastic personality.")
+            response = result.messages[-1].content
             
-            # Send the result to Discord
-            await channel.send(f'{member.mention} {result.messages[-1].content}')
+            try:
+                # Parse the JSON string into your Pydantic model
+                data = YapResponse.model_validate_json(response)
+                
+                # First, send the text message to Discord
+                await channel.send(f'{member.mention} {data.text}')
+                
+                # Call the get_gif tool
+                gif_url = get_gif(data.gif_search_query)
+                
+                # Next, sent the GIF if the routine returned any
+                if gif_url:
+                    await channel.send(gif_url)
+
+            except Exception as e:
+                # Fallback: if the LLM fails JSON formatting, just send the raw content
+                print(f"Parsing error: {e}")
+                await channel.send(response)
         
         return
     
@@ -169,8 +204,25 @@ class DiscordBot(commands.Bot):
             # Trigger V.A.R.U.N.
             # result = await self.public_agent.run(task=f"{after.name} switched from {before.activity.name if before.activity else 'doing nothing'} to {after.activity.name}. Roast them!")
             result = await self.public_agent.run(task=f"{after.name} is now playing {after.activity.name}. Roast them!")
+            response = result.messages[-1].content
             
-            # Send the LLM response to Discord
-            await channel.send(f"{after.mention} {result.messages[-1].content}")
-        
+            try:
+                # Parse the JSON string into your Pydantic model
+                data = YapResponse.model_validate_json(response)
+                
+                # First, send the text message to Discord
+                await channel.send(f"{after.mention} {data.text}")
+                
+                # Call the get_gif tool
+                gif_url = get_gif(data.gif_search_query)
+                
+                # Next, send the GIF if the routine returned any
+                if gif_url:
+                    await channel.send(gif_url)
+                
+            except Exception as e:
+                # Fallback: if the LLM fails JSON formatting, just send the raw content
+                print(f"Parsing error: {e}")
+                await channel.send(response)
+            
         return

@@ -3,6 +3,10 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 
+# Import custom packages
+from src.models import YapResponse
+from src.llm.utils import get_gif
+
 class Yap(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -44,10 +48,26 @@ class Yap(commands.Cog):
             
             # Extract the text response
             response = response.messages[-1].content
-            
-            # Send the result back to Discord in chunks of 2000 characters
-            for i in range(0, len(response), 2000):
-                await interaction.followup.send(response[i:i + 2000])
+                
+            try:
+                # Parse the JSON string into your Pydantic model
+                data = YapResponse.model_validate_json(response)
+                
+                # First, send the text result back to Discord in chunks of 2000 characters
+                for i in range(0, len(data.text), 2000):
+                    await interaction.followup.send(data.text[i:i + 2000])
+                
+                # Call the get_gif tool
+                gif_url = get_gif(data.gif_search_query)
+                
+                # Next, sent the GIF if the routine returned any
+                if gif_url:
+                    await interaction.followup.send(gif_url)
+
+            except Exception as e:
+                # Fallback: if the LLM fails JSON formatting, just send the raw content
+                print(f"Parsing error: {e}")
+                await interaction.followup.send(response)
         
         except Exception as e:
             await interaction.followup.send(f"Error: {e}")
