@@ -20,7 +20,10 @@ class DiscordBot(commands.Bot):
     def __init__(self):
         # Setup intents
         intents = discord.Intents.default()
+        intents.presences = True
+        intents.members = True
         intents.message_content = True
+        
         super().__init__(command_prefix="!", intents=intents)
         
         # Initialize the public V.A.R.U.N. agent
@@ -55,7 +58,6 @@ class DiscordBot(commands.Bot):
         print(f"Logged in as {self.user}")
         return
 
-    # @bot.event
     async def on_message(self, message: discord.Message):
         """
         Method that gets triggered upon any and every message in the channel this bot is added to.
@@ -100,45 +102,75 @@ class DiscordBot(commands.Bot):
         
         return
 
-    ### PREFIX COMMANDS ###
+    async def on_member_join(self, member: discord.Member):
+        """
+        Method that gets triggered when a new member joins the server.
 
-    @commands.command(name="ping")
-    # @bot.command(name="ping", help="Check the bot's latency")
-    async def ping(self, ctx: commands.Context):
+        Args:
+            member (discord.Member): The member object that triggered this event.
         """
-        Simple prefix command that gets triggered on !ping and returns the apparent latency of the bot.
-        """
-        await ctx.send(f"> Pong! {round(self.latency * 1000)}ms")
+        # Avoid welcoming bots
+        if member.bot:
+            return
+        
+        # Get the system channel to send welcome messages to
+        channel = member.guild.system_channel or discord.utils.get(member.guild.text_channels, name="general")
+        
+        if not channel:
+            return
+        
+        # Change state to "typing ..."
+        async with channel.typing():
+            # Trigger V.A.R.U.N.
+            result = await self.public_agent.run(task=f"System: New member {member.name} joined. Greet them with your usual blunt/sarcastic personality.")
+            
+            # Send the result to Discord
+            await channel.send(f'{member.mention} {result.messages[-1].content}')
+        
         return
+    
+    async def on_presence_update(self, before: discord.Member, after: discord.Member):
+        """
+        Triggered where there is an update in a member's status/presence.
 
-### SLASH COMMMANDS ###
+        Args:
+            before (discord.Member): The Member object before the update
+            after (discord.Member): The Member object after the udpate
+        """
+        # Avoid reacting to bots
+        if before.bot:
+            return
+        
+        # DO NOT REACT to offline statuses
+        if not after.activity:
+            return
+        
+        # DO NOT REACT to the user not playing a game presently
+        if not isinstance(after.activity, discord.Game):
+            return
+        
+        # # Extract activity names safely
+        # old_activity = before.activity.name if before.activity else None
+        # new_activity = after.activity.name if after.activity else None
 
-# @bot.tree.command(name="yap", description="Talk to V.A.R.U.N.")
-# @app_commands.describe(prompt="What do you want to ask V.A.R.U.N.?")
-# async def yap(interaction: discord.Interaction, prompt: str):
-#     """
-#     Slash command that provides a simple chat interface with the V.A.R.U.N. agent
-    
-#     Args:
-#         interaction (discord.Interaction): The interaction object that triggered this command.
-#         prompt (str): User provided prompt
-#     """
-    
-#     try:
-#         # Load the "Thinking ..." message
-#         await interaction.response.defer()
+        # # Only proceed if the name actually changed
+        # # This also catches the change of an activity change and NOT just a name change
+        # # This is because names in the music/streaming/games are almost mutually exclusive
+        # if old_activity == new_activity:
+        #     return
+
+        # Find the channel to send the response to
+        channel = after.guild.system_channel or discord.utils.get(after.guild.text_channels, name="general")
         
-#         # Trigger the agent and asynchronously wait for the response
-#         response = await bot.agent.run(task=prompt)
+        if not channel:
+            return
         
-#         # Extract the text response
-#         response = response.messages[-1].content
+        async with channel.typing():
+            # Trigger V.A.R.U.N.
+            # result = await self.public_agent.run(task=f"{after.name} switched from {before.activity.name if before.activity else 'doing nothing'} to {after.activity.name}. Roast them!")
+            result = await self.public_agent.run(task=f"{after.name} is now playing {after.activity.name}. Roast them!")
+            
+            # Send the LLM response to Discord
+            await channel.send(f"{after.mention} {result.messages[-1].content}")
         
-#         # Send the result back to Discord in chunks of 2000 characters
-#         for i in range(0, len(response), 2000):
-#             await interaction.followup.send(response[i:i + 2000])
-    
-#     except Exception as e:
-#         await interaction.followup.send(f"Error: {e}")
-    
-#     return
+        return
