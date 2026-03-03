@@ -6,7 +6,7 @@ from src.models import (
     Weather
 )
 
-async def get_weather(city: str, country: str | None) -> Weather | str:
+async def get_weather(city: str, country: str | None) -> Weather | None:
     """
     Function to fetch the current weather for a given location using the python_weather package.
 
@@ -27,6 +27,6 @@ async def get_weather(city: str, country: str | None) -> Weather | str:
             )
     
     except Exception:
-        return f"Sorry, I couldn't fetch the weather for {city}, {country}."
+        return
     
     return
