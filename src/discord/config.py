@@ -3,7 +3,9 @@ import os
 from dotenv import load_dotenv
 
 # Import custom packages
-from src.discord.cogs.tools import *
+from src.llm.utils import (
+    get_weather,
+)
 
 # Load environment variables
 load_dotenv()
