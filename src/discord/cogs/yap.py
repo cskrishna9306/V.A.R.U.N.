@@ -11,7 +11,19 @@ class Yap(commands.Cog):
         self.agent = bot.public_agent
         
         return
-        
+    
+    ### PREFIX COMMANDS ###
+
+    @commands.command(name="ping")
+    async def ping(self, ctx: commands.Context):
+        """
+        Simple prefix command that gets triggered on !ping and returns the apparent latency of the bot.
+        """
+        await ctx.send(f"> Pong! {round(self.bot.latency * 1000)}ms")
+        return
+    
+    ### SLASH COMMANDS ###
+    
     @app_commands.command(name="yap", description="Talk with V.A.R.U.N.")
     @app_commands.describe(prompt="What do you want to ask V.A.R.U.N.?")
     async def yap(self, interaction: discord.Interaction, prompt: str):
