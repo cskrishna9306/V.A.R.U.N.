@@ -12,9 +12,9 @@ class Transaction(BaseModel):
     amount: float
     patron_id: int
     
-    recepient_ids: list[int]
+    recipient_ids: list[int]
     split_policy: SplitPolicy
     
     # A dictionary mapping each recepient and their respective share amount
-    recepient_shares: dict[int, float]
+    recipient_shares: dict[int, float]
     
