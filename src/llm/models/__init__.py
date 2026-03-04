@@ -1,7 +1,7 @@
 from .Weather import Weather
-from .YapResponse import YapResponse
+from .VVerdict import VVerdict
 
 __all__ = [
     "Weather",
-    "YapResponse"
+    "VVerdict"
 ]
