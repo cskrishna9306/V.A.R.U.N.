@@ -5,7 +5,7 @@ import python_weather
 from importlib.resources import files
 
 # Import custom packages
-from src.models import (
+from src.llm.models import (
     Weather
 )
 from src.llm.config import (

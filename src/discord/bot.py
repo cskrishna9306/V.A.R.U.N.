@@ -9,7 +9,7 @@ from src.discord.config import (
     BOIS_GUILD_ID,
     PUBLIC_TOOLS,
 )
-from src.models import YapResponse
+from src.llm.models import VVerdict
 from src.llm.utils import get_gif
 
 class DiscordBot(commands.Bot):
@@ -93,7 +93,7 @@ class DiscordBot(commands.Bot):
                 
                 try:
                     # Parse the JSON string into your Pydantic model
-                    data = YapResponse.model_validate_json(response)
+                    data = VVerdict.model_validate_json(response)
                     
                     # First, send the text message to Discord
                     await message.reply(data.text)
@@ -145,7 +145,7 @@ class DiscordBot(commands.Bot):
             
             try:
                 # Parse the JSON string into your Pydantic model
-                data = YapResponse.model_validate_json(response)
+                data = VVerdict.model_validate_json(response)
                 
                 # First, send the text message to Discord
                 await channel.send(f'{member.mention} {data.text}')
@@ -208,7 +208,7 @@ class DiscordBot(commands.Bot):
             
             try:
                 # Parse the JSON string into your Pydantic model
-                data = YapResponse.model_validate_json(response)
+                data = VVerdict.model_validate_json(response)
                 
                 # First, send the text message to Discord
                 await channel.send(f"{after.mention} {data.text}")

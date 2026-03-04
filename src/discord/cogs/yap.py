@@ -4,7 +4,7 @@ from discord.ext import commands
 from discord import app_commands
 
 # Import custom packages
-from src.models import YapResponse
+from src.llm.models import VVerdict
 from src.llm.utils import get_gif
 
 class Yap(commands.Cog):
@@ -51,7 +51,7 @@ class Yap(commands.Cog):
                 
             try:
                 # Parse the JSON string into your Pydantic model
-                data = YapResponse.model_validate_json(response)
+                data = VVerdict.model_validate_json(response)
                 
                 # First, send the text result back to Discord in chunks of 2000 characters
                 for i in range(0, len(data.text), 2000):

@@ -10,14 +10,14 @@ from autogen_agentchat.ui import Console
 # Import custom packages
 from src.llm.config import MODEL_ID
 from src.llm.utils import load_system_prompt
-from src.models import YapResponse
+from src.llm.models import VVerdict
 
 class V_A_R_U_N(AssistantAgent):
     """
     The brain behind the V.A.R.U.N. discord bot.
     """
         
-    def __init__(self, tools: list | None, response_format: BaseModel | None = YapResponse):
+    def __init__(self, tools: list | None, response_format: BaseModel | None = VVerdict):
         super().__init__(
             name="V_A_R_U_N",
             system_message=load_system_prompt("V-A-R-U-N.md"),
