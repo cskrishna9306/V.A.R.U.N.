@@ -28,7 +28,7 @@ def load_system_prompt(prompt_file: str) -> str | None:
     
     # Load the system prompt from the given file
     try:
-        return files("src.llm").joinpath(prompt_file).read_text(encoding="utf-8")
+        return files("src.llm.prompts").joinpath(prompt_file).read_text(encoding="utf-8")
     except FileNotFoundError as e:
         print(f"Error: Prompt file {prompt_file} not found: {e}")
     except Exception as e:
