@@ -4,10 +4,12 @@ from discord.ext import commands
 
 # Import custom packages
 from src.llm.orchestrator import V_A_R_U_N
+from src.llm import N_A_M_I
 from src.discord.config import (
     ADMIN_TOOLS,
     BOIS_GUILD_ID,
     PUBLIC_TOOLS,
+    BERI_TOOLS,
 )
 from src.llm.models import VVerdict
 from src.llm.utils import get_gif
@@ -27,10 +29,13 @@ class DiscordBot(commands.Bot):
         super().__init__(command_prefix="!", intents=intents)
         
         # Initialize the public V.A.R.U.N. agent
-        self.public_agent = V_A_R_U_N(tools=PUBLIC_TOOLS)
+        self.varun = V_A_R_U_N(tools=PUBLIC_TOOLS)
         
         # Initialize the admin V.A.R.U.N. agent
         self.admin_agent = V_A_R_U_N(tools=ADMIN_TOOLS)
+
+        # Initialize the N.A.M.I. expense-logging agent
+        self.nami = N_A_M_I(tools=BERI_TOOLS)
         
         return
 
@@ -41,6 +46,7 @@ class DiscordBot(commands.Bot):
         
         # Load the cogs
         await self.load_extension("src.discord.cogs.yap")
+        await self.load_extension("src.discord.cogs.expense")
         
         MY_GUILD = discord.Object(id=BOIS_GUILD_ID)
         self.tree.copy_global_to(guild=MY_GUILD)
@@ -88,7 +94,7 @@ class DiscordBot(commands.Bot):
             # Change state to "typing ..."
             async with message.channel.typing():
                 # Trigger V.A.R.U.N.
-                result = await self.public_agent.run(task=prompt)
+                result = await self.varun.run(task=prompt)
                 response = result.messages[-1].content
                 
                 try:
@@ -140,7 +146,7 @@ class DiscordBot(commands.Bot):
         async with channel.typing():
             
             # Trigger V.A.R.U.N.
-            result = await self.public_agent.run(task=f"System: New member {member.name} joined. Greet them with your usual blunt/sarcastic personality.")
+            result = await self.varun.run(task=f"System: New member {member.name} joined. Greet them with your usual blunt/sarcastic personality.")
             response = result.messages[-1].content
             
             try:
@@ -203,7 +209,7 @@ class DiscordBot(commands.Bot):
         async with channel.typing():
             # Trigger V.A.R.U.N.
             # result = await self.public_agent.run(task=f"{after.name} switched from {before.activity.name if before.activity else 'doing nothing'} to {after.activity.name}. Roast them!")
-            result = await self.public_agent.run(task=f"{after.name} is now playing {after.activity.name}. Roast them!")
+            result = await self.varun.run(task=f"{after.name} is now playing {after.activity.name}. Roast them!")
             response = result.messages[-1].content
             
             try:

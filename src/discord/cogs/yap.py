@@ -12,7 +12,7 @@ class Yap(commands.Cog):
         self.bot = bot
         
         # Initialize the V.A.R.U.N. agent
-        self.agent = bot.public_agent
+        self.agent = bot.varun
         
         return
     
