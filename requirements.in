@@ -1,6 +1,8 @@
 # Python MUST packages
 load_dotenv
 pydantic
+thefuzz
+python-Levenshtein
 discord.py
 
 # Web server packages
@@ -13,3 +15,5 @@ autogen-ext[openai]
 
 # Misc packages for agentic tools
 python-weather
+splitwise
+pytesseract
