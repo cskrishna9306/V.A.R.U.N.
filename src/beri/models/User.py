@@ -7,6 +7,4 @@ class User(BaseModel):
     id: int
     first_name: str
     last_name: str
-    paid_share: float
-    owed_share: float
-    discord_username: str | None
+    discord_username: str | None = ""
