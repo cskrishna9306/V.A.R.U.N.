@@ -12,6 +12,7 @@ from src.beri.config import (
     SPLITWISE_API_KEY,
 )
 from src.beri.models import User
+from src.beri.wall_street_journal import WSJ
 
 # Setup logging
 logging.basicConfig(level=logging.DEBUG)
@@ -21,8 +22,10 @@ class Beri:
         """
         Initialize the Beri object.
         """
-        
         try:
+            # Instantiate the journaling object
+            self.wsj = WSJ()
+            
             # Instantiate the Splitwise client on a per class basis
             self.splitwise_client = Splitwise(
                 consumer_key=SPLITWISE_CONSUMER_KEY,

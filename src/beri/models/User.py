@@ -7,4 +7,5 @@ class User(BaseModel):
     id: int
     first_name: str
     last_name: str
+    debt: float | None = 0.0    # Overall debt owed by this user: +ve implies debt, -ve implies credit
     discord_username: str | None = ""

@@ -29,6 +29,17 @@ class WSJ():
         # The individual edges between all the users in the graph given all previous transactions
         self.debts: dict[int, dict[int, float]] = {}
         
+        # Worst case, the adjacency list will consume O(n^2) space where n is the # of users
+        # If we maintian an inverse/reversed graph to track credit we will consume another O(n^2) space
+        
+        # Alternative, we keep track of the universal debt variable within each user class
+        # +ve debt indicates debt, and -ve debt indicates credit
+        # Additional space would be O(n), a new debt variable per user
+        
+        # How does this universal debt get updated?
+        # When there is a new debt, from recipient -> patron
+        # The debt of the RECIPIENT increases by new debt, and the debt of the PATRON decreases by new debt
+        
         return
     
     def add_user(self, user: User) -> bool:
@@ -215,6 +226,11 @@ class WSJ():
             #   2b. If there is a switch, remove the recipient from the patron's list of edges, and add the new edge to the recipient's list
             # 3. If there is no edge going either way, we add a new one
             
+            # NOTE: Overall debt update is independent of the edge mappings
+            # Update the global debt of both the patron and recipient
+            self.users[debt.recipient_id].debt += debt.amount    # Increase in debt for the recipient
+            self.users[debt.patron_id].debt -= debt.amount       # Decrease in debt for the patron
+            
             if debt.patron_id in self.debts and debt.recipient_id in self.debts[debt.patron_id]:
                 # Case 1: When there exists a debt edge from patron -> recipient (opposite direction)
                 # We need to check if the new debt makes any state changes
@@ -264,7 +280,32 @@ class WSJ():
             
         return False
     
-    def get_user_debt(self, user_id: int) -> list[Debt] | None:
+    def get_user_debt(self, user_id: int) -> float | None:
+        """
+        Responsible for traversing the entire WSJ graph and returning the overall debt owed/to be owed to the provided user.
+
+        Args:
+            user_id (int): The user id to retrieve overall debt for
+
+        Returns:
+            float | None: The total debt owed/to be owed by the user, None otherwise
+        """
+        try:
+            # Check if the given user id exists in the WSJ graph
+            if user_id not in self.users:
+                logging.error(f"The user with id {user_id} does not exist in the current WSJ graph.")
+                return
+            
+            # Take the sum over all the outgoing edges from the provided user
+            # return sum([self.debts[user_id].values()])
+            return self.users[user_id].debt
+        
+        except Exception as e:
+            logging.error(f"Failed to retrieve the debt for {user_id}: {e}")
+        
+        return
+    
+    def list_user_debt(self, user_id: int) -> list[Debt] | None:
         """
         Responsible for traversing the entire WSJ graph and returning the overall debt owed/to be owed to the provided user.
 
@@ -280,12 +321,14 @@ class WSJ():
                 logging.error(f"The user with id {user_id} does not exist in the current WSJ graph.")
                 return
             
-            # The final debt to return
-            debts: list[Debt] = []
-            
-            
-            
-            return debts
+            # Get all outgoing edges from the provided user
+            return [
+                Debt(
+                    patron_id=patron_id,
+                    recipient_id=user_id,
+                    amount=debt,
+                ) for patron_id, debt in self.debts[user_id].items()
+            ]
         
         except Exception as e:
             logging.error(f"Failed to retrieve the debt for {user_id}: {e}")
