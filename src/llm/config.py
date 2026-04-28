@@ -6,16 +6,16 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Defines the LLM to use
+# ChatOllama expects "<model>" instead of "ollama/<model>"
 MODEL_ID = "qwen2.5:latest"
 
-# Construct the LLM config to pass to the agent
-config_list = [
-  {
-    "model": MODEL_ID,
-    "base_url": "http://localhost:11434/v1",
-    # "api_key": "ollama",
-  }
-]
+# Define the model provider's base URL
+# localhost for locally hosted models via ollama
+LLM_BASE_URL = "http://localhost:11434"
+
+# Define the model provider API key
+# ollama doest not require an API key, so we set a placeholder
+MODEL_API_KEY = "ollama"
 
 # Load the GIPHY API key
 GIPHY_API_KEY = os.getenv("GIPHY_API_KEY")

@@ -5,14 +5,14 @@ thefuzz
 python-Levenshtein
 discord.py
 
-# Web server packages
-fastapi
-uvicorn
-
-# LLM packages
+# Autogen packages
 autogen
 autogen-ext[openai]
-crewai
+
+# LangChain packages
+langchain
+langchain-core
+langchain-ollama
 
 # Misc packages for agentic tools
 python-weather
