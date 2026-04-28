@@ -18,3 +18,6 @@ class Transaction(BaseModel):
     # A dictionary mapping each recepient and their respective share amount
     recipient_shares: dict[int, float] | None = {}
     
+    # Splitwise group id for associated namespace mapping
+    group_id: int | None = None
+    

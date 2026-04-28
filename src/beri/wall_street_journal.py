@@ -31,6 +31,7 @@ class WSJ():
         
         # Worst case, the adjacency list will consume O(n^2) space where n is the # of users
         # If we maintian an inverse/reversed graph to track credit we will consume another O(n^2) space
+        self.credits: dict[int, dict[int, float]] = {}
         
         # Alternative, we keep track of the universal debt variable within each user class
         # +ve debt indicates debt, and -ve debt indicates credit
@@ -39,6 +40,9 @@ class WSJ():
         # How does this universal debt get updated?
         # When there is a new debt, from recipient -> patron
         # The debt of the RECIPIENT increases by new debt, and the debt of the PATRON decreases by new debt
+        
+        # Counter to keep track of the total number of transactions constituing the WSJ graph
+        self.transactions: int = 0
         
         return
     
@@ -195,7 +199,10 @@ class WSJ():
                                     amount=(recipient_share * transaction.amount) / 100,
                                 )
                             )
-                
+            
+            # Increment the number of trasactions
+            self.transactions += 1
+            
             return True
         
         except Exception as e:

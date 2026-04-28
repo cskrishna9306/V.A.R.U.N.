@@ -1,6 +1,8 @@
 # Import standard packages
 import logging
 from thefuzz import fuzz
+
+# Import splitwise packages
 from splitwise import Splitwise
 from splitwise.expense import Expense
 from splitwise.user import ExpenseUser
@@ -11,7 +13,7 @@ from src.beri.config import (
     SPLITWISE_CONSUMER_SECRET,
     SPLITWISE_API_KEY,
 )
-from src.beri.models import User
+from src.beri.models import User, SplitPolicy
 from src.beri.wall_street_journal import WSJ
 
 # Setup logging
@@ -69,6 +71,25 @@ class Beri:
         
         except Exception as e:
             logging.error(f"Failed to retrieve groups: {e}")
+        
+        return
+    
+    def get_friends(self) -> list[str] | None:
+        """
+        Get a list of the current user's friends (group-agnostic).
+        
+        Returns:
+            list[str] | None: A list of friend names
+        """
+        try:
+            # Construct and return the names of all friends to the current user
+            return [
+                user.getFirstName() + ((" " + user.getLastName()) if user.getLastName() else "")
+                for user in self.splitwise_client.getFriends()
+            ]
+            
+        except Exception as e:
+            logging.error(f"Failed to retrieve the friends of {self._current_user}: {e}")
         
         return
     
@@ -143,7 +164,7 @@ class Beri:
                 return
 
             return expense.getId()
-
+        
         except Exception as e:
             logging.error(f"Failed to add transaction: {e}")
         
@@ -212,12 +233,23 @@ class Beri:
         
         return
     
+    # To log an expense:
+    # 1. I'll create a pydantic model Transaction (to use instead of function parameters)
+    # 2. Now, we need to enable multiple patrons as well
+    # 2a. Each patron should have their shares too
+    # 3. Figure out the split per recipient
+    # 4. Given the list of patrons and recipients (if no group is given figure out a group with all of them)
+    # 5. If a group is given, check if all patrons and recipients are part of it
+    # 5a. splitwise handles this by default
+    
     def log_expense(
         self,
         amount: float,
         description: str,
         patron: str,
         recipients: list[str],
+        recipient_shares: dict[str, float],
+        split_policy: SplitPolicy,
         group_name: str | None = None,
     ) -> int | None:
         """
@@ -229,13 +261,19 @@ class Beri:
             description (str): Description of the expense
             patron (str): First name of the person who paid
             recipients (list[str]): First names of all participants (including payer)
+            recipient_shares (dict): The amount owed by each recipient
             group_name (str | None): Optional group name to attach the expense to
 
         Returns:
             int | None: The Splitwise expense ID, or None on failure
         """
         try:
-            group_id = self.get_group_id(group_name) if group_name else None
+            if group_name:
+                # Retrieve the group id for the group w/ the closest match to the provided name
+                group_id = self.get_group_id(group_name)
+            else:
+                # TODO: Try to find a group encompassing all the friends
+                pass
 
             # Get the splitwise user ID of the patron
             patron_id = self.get_user_id(patron)
@@ -248,29 +286,95 @@ class Beri:
             if not num_recipients:
                 logging.error("At least one recipient required")
                 return
-
-            # Patron pays the full amount, each recipient owes their share
-            owed_share = round(amount / num_recipients, 2)
+            
+            # Instantiate the list of user objects to send to splitwise
             users: list[User] = []
-
-            # Iterate over all the recepients
-            for recipient in recipients:
-                # Get the splitwise user ID of the recipient
-                user_id = self.get_user_id(recipient)
-                if not user_id:
-                    logging.error(f"Could not find user: {recipient}")
-                    return
+            
+            # Categorize debt evaluation by split policy and calculate owed shares
+            match split_policy:
                 
-                # Add the user to the list of users
-                users.append(
-                    User(
-                        id=user_id,
-                        first_name=recipient,
-                        last_name="",
-                        paid_share=amount if recipient.lower() == patron.lower() else 0.0,
-                        owed_share=owed_share,
-                    ),
-                )
+                case SplitPolicy.EQUAL:
+                    # Implement the EQUAL split policy
+                    # Here, each recipient owes an equal share to the patron
+                    
+                    # We add an equal debt going from recipient -> patron
+                    owed_share: float = amount / len(recipients)
+                    
+                    # Iterate over all the recepients (which includes the patron)
+                    for recipient in recipients:
+                        # Get the splitwise user ID of the recipient
+                        user_id = self.get_user_id(recipient)
+                        if not user_id:
+                            logging.error(f"Could not find user: {recipient}")
+                            return
+                        
+                        # Add the user to the list of users
+                        users.append(
+                            User(
+                                id=user_id,
+                                first_name=recipient,
+                                last_name="",
+                                paid_share=amount if recipient.lower() == patron.lower() else 0.0,
+                                owed_share=owed_share,
+                            ),
+                        )
+                        print(users)
+                
+                case SplitPolicy.AMOUNTS:
+                    # Implemet the AMOUNT split policy
+                    # We distribute debt based on the individual amounts owed by the recipients to the patron
+                    
+                    # First, check if the total amount in the recipient shares equals the total amount
+                    if abs(sum([recipient_share for recipient_share in recipient_shares.values()]) - amount) > 0.01:
+                        logging.error("Inconsistent share distribution. The total transaction amount differs more than 0.01 compared to the collective sum of individual recipient shares.")
+                        return
+                    
+                    # Iterate over all the recepients (which includes the patron)
+                    for recipient in recipients:
+                        # Get the splitwise user ID of the recipient
+                        user_id = self.get_user_id(recipient)
+                        if not user_id:
+                            logging.error(f"Could not find user: {recipient}")
+                            return
+                        
+                        # Add the user to the list of users
+                        users.append(
+                            User(
+                                id=user_id,
+                                first_name=recipient,
+                                last_name="",
+                                paid_share=amount if recipient.lower() == patron.lower() else 0.0,
+                                owed_share=recipient_shares[recipient], # Literally translates to the provided shares
+                            ),
+                        )
+                                                        
+                case SplitPolicy.PERCENTAGE:
+                    # Implemet the PERCENTAGE split policy
+                    # We distribute debt based on the individual percentage of the total amount owed by the recipients to the patron
+                    
+                    # First, check if the total percentage in the recipient shares equals 100
+                    if abs(sum([recipient_share for recipient_share in recipient_shares.values()]) - 100) > 0.01:
+                        logging.error("Inconsistent share distribution. The collective percentage sum of individual recipient shares is not equal to 100!")
+                        return
+                    
+                    # Iterate over all the recepients (which includes the patron)
+                    for recipient in recipients:
+                        # Get the splitwise user ID of the recipient
+                        user_id = self.get_user_id(recipient)
+                        if not user_id:
+                            logging.error(f"Could not find user: {recipient}")
+                            return
+                        
+                        # Add the user to the list of users
+                        users.append(
+                            User(
+                                id=user_id,
+                                first_name=recipient,
+                                last_name="",
+                                paid_share=amount if recipient.lower() == patron.lower() else 0.0,
+                                owed_share=(recipient_shares[recipient] * amount) / 100 # Literally translates to the provided shares
+                            ),
+                        )
 
             # Add the transaction to the ledger
             expense_id = self.add_transaction(amount, description, users, group_id)
@@ -282,6 +386,27 @@ class Beri:
         
         except Exception as e:
             logging.error(f"Failed to log expense: {e}")
+        
+        return
+    
+    def log_expenses(self) -> int | None:
+        """
+        Public method to log/push the current state of the WSJ cache to Splitwise.
+        
+        Returns:
+            int | None: The Splitwise expense ID, or None on failure
+        """
+        try:
+            # How would we translate the debt graph in WSJ to splitwise expense?
+            # We will need to figure out all the creditors and debtors first
+            # The creditors will turn into patrons, and the debtors will turn into recipients
+            
+            # We will need to abstract the current debtors and creditors in the WSJ interface
+            
+            pass
+        
+        except Exception as e:
+            logging.error(f"Failed to log expenses to Splitwise: {e}")
         
         return
 
@@ -336,4 +461,12 @@ class Beri:
         pass
     
     def _remove_debt(self):
+        pass
+    
+    def __del__(self):
+        """
+        Cleanup method to close any open connections or perform any necessary cleanup.
+        """
+        # Currently, the splitwise client does not maintain an open connection, so no cleanup is necessary.
+        # TODO: Ensure to log any journaled transactions from WSJ to splitwise!
         pass
