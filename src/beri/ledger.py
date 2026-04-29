@@ -14,6 +14,7 @@ from src.beri.config import (
     SPLITWISE_API_KEY,
 )
 from src.beri.models import User, SplitPolicy
+from src.beri.exceptions import MissingGroupError
 from src.beri.wall_street_journal import WSJ
 
 # Setup logging
@@ -71,6 +72,36 @@ class Beri:
         
         except Exception as e:
             logging.error(f"Failed to retrieve groups: {e}")
+        
+        return
+    
+    def resolve_group(self, recipients: list[str]) -> list[str] | None:
+        """
+        Find a splitwise group encompassing majority if not all of the provided recipients.
+
+        Args:
+            recipients (list[str]): A list of recipient names to match against
+
+        Returns:
+            list[str] | None: A list of group names if found, else None
+        """
+        try:
+            # A list of group names that encompass the provided recipients
+            group_names: list[str] = []
+            
+            # Maintain a set of the provided recipients to perform subset matching
+            # NOTE: Here, we only match on the first name of each recipient
+            recipients = set(map(lambda x: x.lower().strip().split(" ")[0], recipients))
+            
+            # Iterate over all the groups and check if the recipients are part of any of them
+            for group in self._groups:
+                if recipients.issubset(set(member.getFirstName().lower().strip() for member in group.getMembers())):
+                    group_names.append(group.getName())
+            
+            return group_names
+        
+        except Exception as e:
+            logging.error(f"Failed to resolve group: {e}")
         
         return
     
@@ -262,7 +293,11 @@ class Beri:
             patron (str): First name of the person who paid
             recipients (list[str]): First names of all participants (including payer)
             recipient_shares (dict): The amount owed by each recipient
+            split_policy (SplitPolicy): The policy to use for splitting the expense
             group_name (str | None): Optional group name to attach the expense to
+
+        Raises:
+            MissingGroupError: If no group name is provided and no group is found encompassing all the recipients
 
         Returns:
             int | None: The Splitwise expense ID, or None on failure
@@ -272,8 +307,12 @@ class Beri:
                 # Retrieve the group id for the group w/ the closest match to the provided name
                 group_id = self.get_group_id(group_name)
             else:
-                # TODO: Try to find a group encompassing all the friends
-                pass
+                # Try to find a group encompassing all the provided recipients
+                group_names = self.resolve_group(recipients)
+                if not group_names:
+                    raise MissingGroupError("No group found encompassing all the recipients")
+                else:
+                    raise MissingGroupError(f"Did you want to log this expense under any of the below group names? {group_names}")
 
             # Get the splitwise user ID of the patron
             patron_id = self.get_user_id(patron)

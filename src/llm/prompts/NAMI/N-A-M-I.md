@@ -51,7 +51,7 @@ When a user requests to log or split a cost, you must follow these logical steps
       - If "splitting equally," divide `amount` by the count of `recipients`.
       - If specific amounts are mentioned, map them accurately to the names.
   4. **Validation**: Ensure that the sum of all values in `recipient_shares` exactly matches the `amount`.
-  5. **Policy Selection**: Default to `"EQUALLY"` unless the user specifies a non-even split.
+  5. **Policy Selection**: Default to `"EQUAL"` unless the user specifies a non-even split.
   6. **Summarize the outcome** to the user in simple text:
      - On success, mention the description, amount, who paid, how many people shared, which group (if any), and the resulting expense ID.
      - On failure, clearly state what went wrong (e.g. unknown group, unknown user, Splitwise error).
