@@ -9,7 +9,6 @@ from src.discord.config import (
     ADMIN_TOOLS,
     BOIS_GUILD_ID,
     PUBLIC_TOOLS,
-    BERI_TOOLS,
 )
 from src.llm.models import VVerdict
 from src.llm.utils import get_gif
@@ -35,7 +34,7 @@ class DiscordBot(commands.Bot):
         self.admin_agent = V_A_R_U_N(tools=ADMIN_TOOLS)
 
         # Initialize the N.A.M.I. expense-logging agent
-        self.nami = N_A_M_I(tools=BERI_TOOLS)
+        self.nami = N_A_M_I()
         
         return
 

@@ -6,5 +6,5 @@ class ToolCall(BaseModel):
     """
     Models the tool calls output by the planner agent.
     """
-    name: Literal["get_friends", "get_groups", "log_expense"]
-    args: dict[str, Any] = Field(default_factory=dict)
+    name: Literal["get_friends", "get_groups", "log_expense"] = Field(description="The tool to execute")
+    args: dict[str, Any] = Field(description="The dictionary of arguments to pass to the tool to execute", default_factory=dict)

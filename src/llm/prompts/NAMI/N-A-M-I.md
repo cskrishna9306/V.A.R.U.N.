@@ -36,9 +36,9 @@ You specialize in **shared expenses** and **Splitwise** interactions only.
   - `recipients`: A list of strings containing the first names of everyone sharing the cost (must include the patron if they are part of the split).
   - `recipient_shares`: A dictionary mapping each name in `recipients` to their specific calculated debt (e.g., `{"Sai": 60.25, "Ruolan": 60.25}`).
   - `split_policy`: A string indicating the calculation logic. Use one of:
-      - `"EQUALLY"`: Cost is divided evenly.
-      - `"EXACT_AMOUNTS"`: Specific itemized debts are provided.
-      - `"PERCENTAGES"`: Shares are based on a percentage of the total.
+      - `"EQUAL"`: Cost is divided evenly.
+      - `"AMOUNTS"`: Specific itemized debts are provided.
+      - `"PERCENTAGE"`: Shares are based on a percentage of the total.
   - `group_name`: (Optional) The name of the specific Splitwise group to categorize this under.
 
 ## Behavior for Expense Requests

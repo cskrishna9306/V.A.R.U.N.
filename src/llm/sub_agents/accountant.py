@@ -1,5 +1,6 @@
 # Import standard packages
 import asyncio
+from enum import Enum
 import json
 from typing import Any
 
@@ -111,6 +112,23 @@ class N_A_M_I:
                     }
                 )
 
+        # Create a serializable version of tool_results
+        serialized_tool_results = []
+        for result in tool_results:
+            # If the result is a complex object (like a ToolCall or Enum), 
+            # convert it to a string or a dict.
+            if hasattr(result, "dict"):
+                serialized_tool_results.append(result.dict())
+            elif isinstance(result, Enum):
+                serialized_tool_results.append(result.value)
+            else:
+                # Fallback: force it to a string to prevent the crash
+                try:
+                    json.dumps(result)
+                    serialized_tool_results.append(result)
+                except (TypeError, OverflowError):
+                    serialized_tool_results.append(str(result))
+
         # Call the executor for final summarization
         verdict: NVerdict = self.executor.invoke(
             [
@@ -122,7 +140,7 @@ class N_A_M_I:
                             "input": state.input,
                             "plan": plan.plan if plan else "",
                             "tool_calls": serialized_tool_calls,
-                            "tool_results": tool_results,
+                            "tool_results": serialized_tool_results,
                         },
                         ensure_ascii=False,
                     )
@@ -209,6 +227,10 @@ class N_A_M_I:
                 patron = str(args["patron"])
                 recipients = list(set([str(name) for name in list(args["recipients"]) + [patron]]))
 
+                # Try ensuring the keys and values are serializable:
+                raw_shares = args.get("recipient_shares") or {}
+                sanitized_shares = {str(k): float(v) for k, v in raw_shares.items()}
+
                 # Instantiate the split policy
                 split_policy = args.get("split_policy") or "EQUAL"
                 try:
@@ -222,7 +244,7 @@ class N_A_M_I:
                     description=str(args["description"]),
                     patron=patron,
                     recipients=recipients,
-                    recipient_shares=dict(args.get("recipient_shares") or {}),
+                    recipient_shares=sanitized_shares,
                     split_policy=split_policy,
                     group_name=args.get("group_name"),
                 )
