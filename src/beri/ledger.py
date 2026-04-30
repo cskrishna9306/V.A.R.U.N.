@@ -6,7 +6,6 @@ from thefuzz import fuzz
 # Import splitwise packages
 from splitwise import Splitwise
 from splitwise.expense import Expense
-from splitwise.user import ExpenseUser
 
 # Import custom packages
 from src.beri.config import (
