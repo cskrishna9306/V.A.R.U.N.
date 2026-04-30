@@ -22,10 +22,12 @@ V.A.R.U.N. is a Discord bot that pairs a local LLM (via [Ollama](https://ollama.
 ## Quickstart
 
 1. **Prerequisites**
+   
    - Python 3.13 (matches the pinned dependency set).
-   - [Ollama](https://ollama.com/) running locally. Pull the model configured in `src/llm/config.py` (default `qwen2.5:latest`) so tool-calling and JSON-style outputs match expectations.
+   - [Ollama](https://ollama.com/) running locally.  Pull the model configured in `src/llm/config.py` (default `qwen2.5:latest`) so tool-calling and JSON-style outputs match expectations.
 
 2. **Install**
+   
    ```bash
    cd /path/to/V.A.R.U.N.
    python -m venv .venv
@@ -34,20 +36,26 @@ V.A.R.U.N. is a Discord bot that pairs a local LLM (via [Ollama](https://ollama.
    ```
 
 3. **Environment**
+   
    Create a `.env` in the project root (see `load_dotenv()` usage in `src/discord/config.py` and `src/beri/config.py`):
+   
    - `DISCORD_BOT_TOKEN` — required for the bot.
    - `GIPHY_API_KEY` — optional; enables GIF search behavior when configured.
    - `SPLITWISE_CONSUMER_KEY`, `SPLITWISE_CONSUMER_SECRET`, `SPLITWISE_API_KEY` — required for Beri / expense logging features.
 
 4. **Run the bot**
+   
    From the repository root:
+   
    ```bash
    python -m src.main
    ```
 
 5. **Docker (optional)**
+   
    ```bash
    docker build -t varun-bot .
    docker run --env-file .env varun-bot
    ```
+   
    Ensure Ollama is reachable from the container if you rely on the default `LLM_BASE_URL` in `src/llm/config.py` (often `http://localhost:11434` on the host).
