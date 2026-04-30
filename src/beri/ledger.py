@@ -1,5 +1,6 @@
 # Import standard packages
 import logging
+import random
 from thefuzz import fuzz
 
 # Import splitwise packages
@@ -16,6 +17,7 @@ from src.beri.config import (
 from src.beri.models import User, SplitPolicy
 from src.beri.exceptions import MissingGroupError
 from src.beri.wall_street_journal import WSJ
+from src.beri.utils import split_equally
 
 # Setup logging
 logging.basicConfig(level=logging.DEBUG)
@@ -191,7 +193,7 @@ class Beri:
             
             # Check for errors
             if errors:
-                logging.error(f"Splitwise returned errors while creating expense: {errors}")
+                logging.error(f"Splitwise returned errors while creating expense: {errors.getErrors()}")
                 return
 
             return expense.getId()
@@ -335,13 +337,12 @@ class Beri:
                 case SplitPolicy.EQUAL:
                     # Implement the EQUAL split policy
                     # Here, each recipient owes an equal share to the patron
+                    owed_shares = split_equally(amount, num_recipients)
                     
-                    # We add an equal debt going from recipient -> patron
-                    owed_share: float = amount / len(recipients)
+                    # NOTE: Here, we ensure that folks paying the remainder cents are randomized
+                    random.shuffle(owed_shares)
                     
-                    # Iterate over all the recepients (which includes the patron)
-                    for recipient in recipients:
-                        # Get the splitwise user ID of the recipient
+                    for i, recipient in enumerate(recipients):
                         user_id = self.get_user_id(recipient)
                         if not user_id:
                             logging.error(f"Could not find user: {recipient}")
@@ -354,10 +355,9 @@ class Beri:
                                 first_name=recipient,
                                 last_name="",
                                 paid_share=amount if recipient.lower() == patron.lower() else 0.0,
-                                owed_share=owed_share,
+                                owed_share=owed_shares[i],
                             ),
                         )
-                        print(users)
                 
                 case SplitPolicy.AMOUNTS:
                     # Implemet the AMOUNT split policy
