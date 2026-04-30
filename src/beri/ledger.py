@@ -17,7 +17,7 @@ from src.beri.config import (
 from src.beri.models import User, SplitPolicy
 from src.beri.exceptions import MissingGroupError
 from src.beri.wall_street_journal import WSJ
-from src.beri.utils import split_equally
+from src.beri.utils import split_equally, create_expense_user
 
 # Setup logging
 logging.basicConfig(level=logging.DEBUG)
@@ -126,33 +126,33 @@ class Beri:
         
         return
     
-    def _user_to_expense_user(self, user: User) -> ExpenseUser:
-        """
-        Helper method to convert our User model to Splitwise ExpenseUser.
+    # def _user_to_expense_user(self, user: User) -> ExpenseUser:
+    #     """
+    #     Helper method to convert our User model to Splitwise ExpenseUser.
         
-        Args:
-            user (User): The User model to convert
+    #     Args:
+    #         user (User): The User model to convert
 
-        Returns:
-            ExpenseUser: The converted Splitwise ExpenseUser
-        """
+    #     Returns:
+    #         ExpenseUser: The converted Splitwise ExpenseUser
+    #     """
         
-        try:
-            # Instantiate the splitwise ExpenseUser class
-            eu = ExpenseUser()
+    #     try:
+    #         # Instantiate the splitwise ExpenseUser class
+    #         eu = ExpenseUser()
             
-            # Set the ID, paid share, and owed share of the ExpenseUser
-            eu.setId(user.id)
-            eu.setPaidShare(str(user.paid_share))
-            eu.setOwedShare(str(user.owed_share))
+    #         # Set the ID, paid share, and owed share of the ExpenseUser
+    #         eu.setId(user.id)
+    #         eu.setPaidShare(str(user.paid_share))
+    #         eu.setOwedShare(str(user.owed_share))
             
-            # Return the converted Splitwise ExpenseUser
-            return eu
+    #         # Return the converted Splitwise ExpenseUser
+    #         return eu
         
-        except Exception as e:
-            logging.error(f"Failed to convert User to ExpenseUser: {e}")
+    #     except Exception as e:
+    #         logging.error(f"Failed to convert User to ExpenseUser: {e}")
         
-        return
+    #     return
 
     def add_transaction(
         self,
@@ -186,7 +186,8 @@ class Beri:
             expense.setGroupId(group_id)
             
             # Set the users of the expense
-            expense.setUsers([self._user_to_expense_user(user) for user in users])
+            # expense.setUsers([self._user_to_expense_user(user) for user in users])
+            expense.setUsers([create_expense_user(user) for user in users])
 
             # Initiate the splitwise expense/transaction
             expense, errors = self.splitwise_client.createExpense(expense)
