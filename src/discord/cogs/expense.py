@@ -5,7 +5,8 @@ from discord import app_commands
 
 # Import custom packages
 from src.llm.utils import get_gif
-
+from src.beri import Beri
+from src.discord.views.ClimaTact import ClimaTact
 
 class Expense(commands.Cog):
     def __init__(self, bot: commands.Bot):
@@ -13,6 +14,9 @@ class Expense(commands.Cog):
 
         # Initialize the N.A.M.I. agent for expenses
         self.agent = bot.nami
+        
+        # Initialize the Beri object to be used via discord Views
+        self.beri = Beri()
 
         return
 
@@ -59,7 +63,21 @@ class Expense(commands.Cog):
 
         return
 
-
+    @app_commands.command(name="bounty", description="Log a shared expense to Splitwise")
+    @app_commands.checks.has_role("Summoners")
+    async def bounty(self, interaction: discord.Interaction):
+        """
+        Slash command responsible for logging a shared expense to Splitwise.
+        """
+        
+        # Initialize the ClimaTact view
+        view = ClimaTact(self.beri)
+        
+        # Send the view to the channel
+        await interaction.response.send_message("Let's get started:", view=view)
+        
+        return
+    
 # This is required for the bot to "load" the file
 async def setup(bot: commands.Bot):
     await bot.add_cog(Expense(bot))
