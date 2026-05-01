@@ -76,6 +76,33 @@ class Beri:
         
         return
     
+    def get_group_members(self, group_name: str) -> list[str] | None:
+        """
+        Get a list of all the members of a given group.
+        
+        Args:
+            group_name (str): The name of the group to get the members of
+        
+        Returns:
+            list[str] | None: A list of member names
+        """
+        try:
+            # Get the group id for the group w/ the closest match to the provided name
+            group_id = self.get_group_id(group_name)
+            if not group_id:
+                logging.error(f"Could not find group: {group_name}")
+                return
+            
+            return [
+                member.getFirstName() + ((" " + member.getLastName()) if member.getLastName() else "")
+                for member in self.splitwise_client.getGroup(group_id).getMembers()
+            ]
+            
+        except Exception as e:
+            logging.error(f"Failed to retrieve group members: {e}")
+            
+        return
+    
     def resolve_group(self, recipients: list[str]) -> list[str] | None:
         """
         Find a splitwise group encompassing majority if not all of the provided recipients.
@@ -124,34 +151,6 @@ class Beri:
             logging.error(f"Failed to retrieve the friends of {self._current_user}: {e}")
         
         return
-    
-    # def _user_to_expense_user(self, user: User) -> ExpenseUser:
-    #     """
-    #     Helper method to convert our User model to Splitwise ExpenseUser.
-        
-    #     Args:
-    #         user (User): The User model to convert
-
-    #     Returns:
-    #         ExpenseUser: The converted Splitwise ExpenseUser
-    #     """
-        
-    #     try:
-    #         # Instantiate the splitwise ExpenseUser class
-    #         eu = ExpenseUser()
-            
-    #         # Set the ID, paid share, and owed share of the ExpenseUser
-    #         eu.setId(user.id)
-    #         eu.setPaidShare(str(user.paid_share))
-    #         eu.setOwedShare(str(user.owed_share))
-            
-    #         # Return the converted Splitwise ExpenseUser
-    #         return eu
-        
-    #     except Exception as e:
-    #         logging.error(f"Failed to convert User to ExpenseUser: {e}")
-        
-    #     return
 
     def add_transaction(
         self,
