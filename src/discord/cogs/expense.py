@@ -74,7 +74,10 @@ class Expense(commands.Cog):
         view = ClimaTact(self.beri)
         
         # Send the view to the channel
-        await interaction.response.send_message("Let's get started:", view=view)
+        await interaction.response.send_message(
+            "Enter the expense description.",
+            view=view,
+        )
         
         return
     
