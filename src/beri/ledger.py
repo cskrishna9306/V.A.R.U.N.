@@ -202,20 +202,20 @@ class Beri:
         
         return
     
-    def get_user_id(self, first_name: str, last_name: str | None = None) -> int | None:
+    def get_user_id(self, name: str) -> int | None:
         """
         Retrieve the Splitwise user ID for the provided user by searching friends and group members.
 
         Args:
-            first_name (str): The first name of the user to search for
-            last_name (str | None): Optional last name for disambiguation
+            name (str): The full name of the user to search for
 
         Returns:
             int | None: The user id if a match is found, else None
         """
         try:
-            first_name = first_name.lower().strip()
-            last_name = (last_name or "").lower().strip()
+            name = name.lower().strip()
+            first_name = name.split(" ")[0]
+            last_name = name.split(" ")[1] if len(name.split(" ")) > 1 else None
 
             # Build list: current user + friends + all group members (dedupe by id)
             seen_ids: set[int] = set()
@@ -280,8 +280,8 @@ class Beri:
         description: str,
         patron: str,
         recipients: list[str],
-        recipient_shares: dict[str, float],
         split_policy: SplitPolicy,
+        recipient_shares: dict[str, float] | None = None,
         group_name: str | None = None,
     ) -> int | None:
         """
@@ -293,7 +293,7 @@ class Beri:
             description (str): Description of the expense
             patron (str): First name of the person who paid
             recipients (list[str]): First names of all participants (including payer)
-            recipient_shares (dict): The amount owed by each recipient
+            recipient_shares (dict | None): The amount owed by each recipient, or None if the split policy is equal
             split_policy (SplitPolicy): The policy to use for splitting the expense
             group_name (str | None): Optional group name to attach the expense to
 
@@ -362,6 +362,10 @@ class Beri:
                     # Implemet the AMOUNT split policy
                     # We distribute debt based on the individual amounts owed by the recipients to the patron
                     
+                    if not recipient_shares:
+                        logging.error("No recipient shares provided for the AMOUNTS split policy")
+                        return
+                    
                     # First, check if the total amount in the recipient shares equals the total amount
                     if abs(sum([recipient_share for recipient_share in recipient_shares.values()]) - amount) > 0.01:
                         logging.error("Inconsistent share distribution. The total transaction amount differs more than 0.01 compared to the collective sum of individual recipient shares.")
@@ -389,6 +393,10 @@ class Beri:
                 case SplitPolicy.PERCENTAGE:
                     # Implemet the PERCENTAGE split policy
                     # We distribute debt based on the individual percentage of the total amount owed by the recipients to the patron
+                    
+                    if not recipient_shares:
+                        logging.error("No recipient shares provided for the PERCENTAGE split policy")
+                        return
                     
                     # First, check if the total percentage in the recipient shares equals 100
                     if abs(sum([recipient_share for recipient_share in recipient_shares.values()]) - 100) > 0.01:
