@@ -157,6 +157,7 @@ class Beri:
         amount: float,
         description: str,
         users: list[User],
+        split_policy: SplitPolicy,
         group_id: int | None = None,
     ) -> int | None:
         """
@@ -186,6 +187,11 @@ class Beri:
             # Set the users of the expense
             # expense.setUsers([self._user_to_expense_user(user) for user in users])
             expense.setUsers([create_expense_user(user) for user in users])
+            
+            # Set the split equally when necessary
+            # Delegate the equal split to splitwise
+            if split_policy == SplitPolicy.EQUAL:
+                expense.setSplitEqually(True)
 
             # Initiate the splitwise expense/transaction
             expense, errors = self.splitwise_client.createExpense(expense)
@@ -213,7 +219,13 @@ class Beri:
             int | None: The user id if a match is found, else None
         """
         try:
-            name = name.lower().strip()
+            # First we match on the entire name
+            for user in [self._current_user] + self._friends:
+                current_name = user.getFirstName() + (" " + user.getLastName() if user.getLastName() else "")
+                if current_name == name:
+                    return user.getId()
+            
+            # Otherwise, we perform fuzzy matching on the first and last name
             first_name = name.split(" ")[0]
             last_name = name.split(" ")[1] if len(name.split(" ")) > 1 else None
 
@@ -261,7 +273,7 @@ class Beri:
             logging.info(f"No match found for user: {first_name} {last_name or ''}")
 
         except Exception as e:
-            logging.error(f"Failed to retrieve user Id for {first_name}: {e}")
+            logging.error(f"Failed to retrieve user Id for {name}: {e}")
         
         return
     
@@ -423,7 +435,7 @@ class Beri:
                         )
 
             # Add the transaction to the ledger
-            expense_id = self.add_transaction(amount, description, users, group_id)
+            expense_id = self.add_transaction(amount, description, users, split_policy, group_id)
             if not expense_id:
                 logging.error("Failed to add transaction to ledger")
                 return
