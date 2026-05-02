@@ -25,7 +25,8 @@ class AmountModal(discord.ui.Modal):
 
     async def on_submit(self, interaction: discord.Interaction):
         """
-        Submit the modal.
+        Handle the submission of the amount modal.
+        This is triggered on the submission of the modal.
         """
         try:
             # Get the raw amount from the input
