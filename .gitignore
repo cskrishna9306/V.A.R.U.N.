@@ -208,3 +208,6 @@ __marimo__/
 
 # macOS cache
 .DS_Store
+
+# Ignore Alexa deployment packages
+.build/

@@ -226,8 +226,8 @@ class Beri:
                     return user.getId()
             
             # Otherwise, we perform fuzzy matching on the first and last name
-            first_name = name.split(" ")[0]
-            last_name = name.split(" ")[1] if len(name.split(" ")) > 1 else None
+            first_name = name.split(" ")[0].lower()
+            last_name = name.split(" ")[1].lower() if len(name.split(" ")) > 1 else None
 
             # Build list: current user + friends + all group members (dedupe by id)
             seen_ids: set[int] = set()

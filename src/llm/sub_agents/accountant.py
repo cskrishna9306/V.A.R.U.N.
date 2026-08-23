@@ -6,14 +6,14 @@ from typing import Any
 
 # Import langchain packages
 from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_ollama import ChatOllama
+from langchain_aws import ChatBedrockConverse
 from langgraph.graph import StateGraph, START, END
 from langgraph.graph.state import CompiledStateGraph
 
 # Import custom packages
 from src.beri import Beri
 from src.beri.models import SplitPolicy
-from src.llm.config import LLM_BASE_URL, MODEL_ID
+from src.llm.config import AWS_REGION, MODEL_ID
 from src.llm.models import NVerdict, NPlan, ToolCall, NState
 from src.llm.utils import load_system_prompt
 
@@ -37,10 +37,11 @@ class N_A_M_I:
         self.executor_instructions = load_system_prompt("NAMI/Executor.md") or ""
         
         # Initialize the LLM for both planner and executor
-        # Langchain takes ollama models as "<model>" instead of "ollama/<model>"
-        self.llm = ChatOllama(
+        # Credentials come from the standard AWS credential chain (env vars,
+        # shared config/profile, or IAM role) rather than being hardcoded here.
+        self.llm = ChatBedrockConverse(
             model=MODEL_ID,
-            base_url=LLM_BASE_URL,
+            region_name=AWS_REGION,
             temperature=0.2,
         )
         

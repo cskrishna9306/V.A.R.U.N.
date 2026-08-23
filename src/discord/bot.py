@@ -4,7 +4,7 @@ from discord.ext import commands
 
 # Import custom packages
 from src.llm.orchestrator import V_A_R_U_N
-from src.llm import N_A_M_I
+# from src.llm import N_A_M_I  # NAMI disabled for now; /expense uses the modal-driven ClimaTact flow
 from src.discord.config import (
     ADMIN_TOOLS,
     BOIS_GUILD_ID,
@@ -33,9 +33,9 @@ class DiscordBot(commands.Bot):
         # Initialize the admin V.A.R.U.N. agent
         self.admin_agent = V_A_R_U_N(tools=ADMIN_TOOLS)
 
-        # Initialize the N.A.M.I. expense-logging agent
-        self.nami = N_A_M_I()
-        
+        # NAMI disabled for now; /expense uses the modal-driven ClimaTact flow
+        # self.nami = N_A_M_I()
+
         return
 
     async def setup_hook(self):

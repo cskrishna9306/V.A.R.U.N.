@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: varun-bot
+  labels:
+    app: varun-bot
+spec:
+  # Keep this at 1: the bot holds a single Discord gateway session.
+  # Running >1 replica would cause duplicate responses in Discord.
+  replicas: 1
+  strategy:
+    # Fully stop the old pod before starting the new one, so two pods
+    # never briefly hold the same Discord gateway session at once.
+    type: Recreate
+  selector:
+    matchLabels:
+      app: varun-bot
+  template:
+    metadata:
+      labels:
+        app: varun-bot
+    spec:
+      containers:
+        - name: varun-bot
+          image: varun-bot:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+              name: health
+          envFrom:
+            - secretRef:
+                name: varun-bot-secrets
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi

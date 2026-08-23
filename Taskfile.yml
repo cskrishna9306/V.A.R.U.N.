@@ -1,0 +1,96 @@
+version: "3"
+
+dotenv: [".env"]
+
+vars:
+  FUNCTION_NAME: nami
+  ROLE_NAME: nami-lambda-role
+  BUILD_DIR: .build
+  ZIP_FILE: nami.zip
+  # langchain-aws pulls in numpy/botocore/etc, pushing the zip past Lambda's
+  # 50MB direct-upload limit - stage it through S3 instead (250MB unzipped
+  # limit there), so this bucket just holds the deployment package.
+  DEPLOY_BUCKET: nami-lambda-deploy-941172426291
+
+tasks:
+  package:
+    desc: Assemble the NAMI Lambda deployment package into a zip
+    cmds:
+      - rm -rf "{{.BUILD_DIR}}" "{{.ZIP_FILE}}"
+      - mkdir -p "{{.BUILD_DIR}}/src/llm/sub_agents" "{{.BUILD_DIR}}/src/llm/models" "{{.BUILD_DIR}}/src/llm/prompts/NAMI" "{{.BUILD_DIR}}/src/beri"
+      # --python-platform/--only-binary force Lambda-compatible (Linux x86_64)
+      # wheels for packages w/ compiled extensions (e.g. pydantic-core) -
+      # without this, wheels built for this machine's OS get installed instead
+      # and fail to import once deployed to Lambda.
+      - 'uv pip install -r aws/lambda/requirements.txt --target "{{.BUILD_DIR}}" --no-cache --python-platform x86_64-manylinux2014 --python-version 3.13 --only-binary=:all:'
+      - cp aws/lambda/function.py "{{.BUILD_DIR}}/"
+      - cp src/__init__.py "{{.BUILD_DIR}}/src/"
+      - cp src/llm/__init__.py src/llm/config.py src/llm/utils.py "{{.BUILD_DIR}}/src/llm/"
+      - cp src/llm/sub_agents/__init__.py src/llm/sub_agents/accountant.py "{{.BUILD_DIR}}/src/llm/sub_agents/"
+      - cp src/llm/models/*.py "{{.BUILD_DIR}}/src/llm/models/"
+      - cp src/llm/prompts/NAMI/*.md "{{.BUILD_DIR}}/src/llm/prompts/NAMI/"
+      - cp -r src/beri/. "{{.BUILD_DIR}}/src/beri/"
+      - find "{{.BUILD_DIR}}/src" -name "__pycache__" -exec rm -rf {} +
+      - cd "{{.BUILD_DIR}}" && zip -r "../{{.ZIP_FILE}}" . -x ".*" >/dev/null
+
+  ensure-role:
+    desc: Create the Lambda execution role if it doesn't exist yet
+    cmds:
+      - |
+        if ! aws iam get-role --role-name {{.ROLE_NAME}} >/dev/null 2>&1; then
+          aws iam create-role --role-name {{.ROLE_NAME}} \
+            --assume-role-policy-document file://aws/lambda/trust-policy.json >/dev/null
+          aws iam attach-role-policy --role-name {{.ROLE_NAME}} \
+            --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+          aws iam put-role-policy --role-name {{.ROLE_NAME}} \
+            --policy-name bedrock-invoke \
+            --policy-document file://aws/lambda/bedrock-policy.json
+          # Freshly created roles aren't immediately assumable everywhere -
+          # give IAM a moment to propagate before Lambda tries to use it.
+          echo "Waiting for IAM role to propagate..."
+          sleep 10
+        fi
+
+  ensure-bucket:
+    desc: Create the S3 bucket used to stage the deployment package if it doesn't exist yet
+    cmds:
+      - |
+        if ! aws s3api head-bucket --bucket {{.DEPLOY_BUCKET}} --region "$AWS_REGION" >/dev/null 2>&1; then
+          aws s3api create-bucket --bucket {{.DEPLOY_BUCKET}} --region "$AWS_REGION" \
+            --create-bucket-configuration LocationConstraint="$AWS_REGION" >/dev/null
+        fi
+
+  deploy:
+    desc: Build and deploy the NAMI Lambda function (creates it on first run, updates it after)
+    deps: [package]
+    cmds:
+      - task: ensure-role
+      - task: ensure-bucket
+      - aws s3 cp "{{.ZIP_FILE}}" "s3://{{.DEPLOY_BUCKET}}/{{.ZIP_FILE}}" --region "$AWS_REGION" >/dev/null
+      - |
+        ROLE_ARN=$(aws iam get-role --role-name {{.ROLE_NAME}} --query 'Role.Arn' --output text)
+        # NOTE: AWS_REGION is a reserved Lambda env var name (auto-populated
+        # by the runtime to the function's deployed region) and cannot be
+        # set here - src/llm/config.py's os.getenv("AWS_REGION", ...) still
+        # picks it up automatically at runtime without us passing it.
+        ENV_VARS="Variables={SPLITWISE_CONSUMER_KEY=$SPLITWISE_CONSUMER_KEY,SPLITWISE_CONSUMER_SECRET=$SPLITWISE_CONSUMER_SECRET,SPLITWISE_API_KEY=$SPLITWISE_API_KEY,GIPHY_API_KEY=$GIPHY_API_KEY,LLM_PROVIDER=bedrock,BEDROCK_MODEL_ID=us.anthropic.claude-haiku-4-5-20251001-v1:0}"
+        if aws lambda get-function --function-name {{.FUNCTION_NAME}} --region "$AWS_REGION" >/dev/null 2>&1; then
+          aws lambda update-function-code --function-name {{.FUNCTION_NAME}} --region "$AWS_REGION" \
+            --s3-bucket {{.DEPLOY_BUCKET}} --s3-key "{{.ZIP_FILE}}" >/dev/null
+          aws lambda wait function-updated --function-name {{.FUNCTION_NAME}} --region "$AWS_REGION"
+          aws lambda update-function-configuration --function-name {{.FUNCTION_NAME}} --region "$AWS_REGION" \
+            --environment "$ENV_VARS" >/dev/null
+        else
+          aws lambda create-function --function-name {{.FUNCTION_NAME}} --region "$AWS_REGION" \
+            --runtime python3.13 --handler function.handler --role "$ROLE_ARN" \
+            --code S3Bucket={{.DEPLOY_BUCKET}},S3Key="{{.ZIP_FILE}}" --timeout 10 --memory-size 256 \
+            --environment "$ENV_VARS" >/dev/null
+        fi
+
+  allow-alexa:
+    desc: 'One-time: grant an Alexa skill permission to invoke this function (usage: task allow-alexa SKILL_ID=amzn1.ask.skill.xxx)'
+    cmds:
+      - |
+        aws lambda add-permission --function-name {{.FUNCTION_NAME}} --region "$AWS_REGION" \
+          --statement-id alexa-skill-trigger --action lambda:InvokeFunction \
+          --principal alexa-appkit.amazon.com --event-source-token "{{.SKILL_ID}}"

@@ -1,0 +1,17 @@
+# Scoped to NAMI's actual import chain (src/llm/{config,utils,models,sub_agents}
+# + src/beri) plus the Alexa/AWS glue in function.py. Deliberately excludes
+# discord.py, autogen*, crewai, and anything else that only the Discord bot
+# / main V_A_R_U_N orchestrator needs.
+ask-sdk-core>=1.19.0
+boto3>=1.43.47,<2.0.0
+pydantic>=2.13.4
+python-dotenv>=1.2.2
+requests>=2.34.2
+langchain-core
+langchain-ollama
+langchain-aws
+langgraph
+splitwise
+thefuzz
+python-Levenshtein
+python_weather

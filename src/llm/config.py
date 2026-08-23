@@ -6,16 +6,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Defines the LLM to use
-# ChatOllama expects "<model>" instead of "ollama/<model>"
-MODEL_ID = "qwen2.5:latest"
+# Bedrock inference profile ID for Claude Haiku 4.5
+MODEL_ID = "us.anthropic.claude-haiku-4-5-20251001-v1:0"
 
-# Define the model provider's base URL
-# localhost for locally hosted models via ollama
-LLM_BASE_URL = "http://localhost:11434"
-
-# Define the model provider API key
-# ollama doest not require an API key, so we set a placeholder
-MODEL_API_KEY = "ollama"
+# AWS region hosting the Bedrock inference profile
+AWS_REGION = os.getenv("AWS_REGION", "us-west-1")
 
 # Load the GIPHY API key
 GIPHY_API_KEY = os.getenv("GIPHY_API_KEY")
