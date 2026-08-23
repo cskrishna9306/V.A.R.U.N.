@@ -20,11 +20,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the application code
-COPY . .
+# Copy the application source
+COPY src/ ./src/
 
-# Set the PYTHONPATH so the container can find modules in /src
-ENV PYTHONPATH=/app/src
+# Health server (see src/app.py) listens here
+EXPOSE 8000
 
-# Command to run your bot in the container
+# Command to run the bot (and health server) in the container
 CMD ["python", "-m", "src.main"]

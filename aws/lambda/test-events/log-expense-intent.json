@@ -1,0 +1,42 @@
+{
+  "version": "1.0",
+  "session": {
+    "new": true,
+    "sessionId": "amzn1.echo-api.session.test-session-id",
+    "application": {
+      "applicationId": "amzn1.ask.skill.test-skill-id"
+    },
+    "user": {
+      "userId": "amzn1.ask.account.test-user-id"
+    }
+  },
+  "context": {
+    "System": {
+      "application": {
+        "applicationId": "amzn1.ask.skill.test-skill-id"
+      },
+      "user": {
+        "userId": "amzn1.ask.account.test-user-id"
+      },
+      "apiEndpoint": "https://api.amazonalexa.com",
+      "apiAccessToken": "test-token"
+    }
+  },
+  "request": {
+    "type": "IntentRequest",
+    "requestId": "amzn1.echo-api.request.test-request-id",
+    "timestamp": "2026-07-22T12:00:00Z",
+    "locale": "en-US",
+    "intent": {
+      "name": "LogExpenseIntent",
+      "confirmationStatus": "NONE",
+      "slots": {
+        "query": {
+          "name": "query",
+          "value": "Can you log $40 for dinner split with Monniiesh in 'Shut My Ass' and Sai Krishna Chaparala as the patron? Title this shared expense as 'Test w/ Alexa'",
+          "confirmationStatus": "NONE"
+        }
+      }
+    }
+  }
+}

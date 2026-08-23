@@ -4,15 +4,22 @@ pydantic
 thefuzz
 python-Levenshtein
 discord.py
+fastapi
+uvicorn
 
 # Autogen packages
 autogen
-autogen-ext[openai]
+autogen-agentchat
+autogen-ext[anthropic]
+
+# autogen-ext==0.7.5's Anthropic client still passes temperature/top_p/top_k to
+# Messages.create(), which anthropic>=1.0 dropped. Pin below that break.
+anthropic<1.0
 
 # LangChain packages
 langchain
 langchain-core
-langchain-ollama
+langchain-aws
 
 # Misc packages for agentic tools
 python-weather
